@@ -1,7 +1,7 @@
 ﻿torch
 torchvision
 ultralytics
-mlflowpy;
+mlflow
 dagshub
 dvc
 pandas
