@@ -7,3 +7,20 @@ data:
     train: 14122
     val: 3099
     test: 4306
+baseline:
+  img_size: 224
+  batch_size: 64
+  epochs: 5
+  lr: 0.001
+  weight_decay: 0.0001
+  seed: 42
+  num_workers: 4          # set 0 if Windows throws a multiprocessing error
+  freeze_backbone: false
+  subset_fraction: 1.0    # 0.02 for a quick smoke test
+  run_name: baseline-v1
+  out_dir: models/baseline
+  augment:
+    hflip: true
+    color_jitter: 0.2
+  eval_sets:
+    - {name: dfire_test, root: data/processed/dfire, split: test}
