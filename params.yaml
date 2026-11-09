@@ -7,3 +7,4 @@ data:
     train: 14122
     val: 3099
     test: 4306
+  simuletic_exclude: [fire_detected_var16_img3]

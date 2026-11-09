@@ -5,8 +5,8 @@ stages:
     deps:
     - path: src/data/ingest.py
       hash: md5
-      md5: 92b4d1c67cac9c97a594ee9c31dc1a1e
-      size: 2054
+      md5: 836ae59b986cd77911a6c9b36111c77e
+      size: 2619
     params:
       params.yaml:
         data.raw_dir: data/raw/dfire
@@ -16,6 +16,11 @@ stages:
       md5: 383a5c7d7402312ff7d147051659d479.dir
       size: 3118334483
       nfiles: 43055
+    - path: data/raw/simuletic
+      hash: md5
+      md5: 12a68f2f487bed82f8bd4321a1e4bfea.dir
+      size: 340593777
+      nfiles: 480
   validate:
     cmd: python -m src.data.validate_stage
     deps:
@@ -78,3 +83,75 @@ stages:
       hash: md5
       md5: bfc0f556f5fa0f63debea53868deb44a
       size: 657
+  validate_simuletic:
+    cmd: python -m src.data.validate_simuletic
+    deps:
+    - path: configs/classes.yaml
+      hash: md5
+      md5: 47328d286b77a7de4c31723e5c1534ed
+      size: 29
+    - path: data/raw/simuletic
+      hash: md5
+      md5: 12a68f2f487bed82f8bd4321a1e4bfea.dir
+      size: 340593777
+      nfiles: 480
+    - path: src/data/simuletic.py
+      hash: md5
+      md5: ff8cbe8f55e469ec0b8cab30c9b86889
+      size: 2107
+    - path: src/data/validate_simuletic.py
+      hash: md5
+      md5: 41752cddd0a005a86becc3d3e62c2615
+      size: 4195
+    outs:
+    - path: reports/validation_simuletic.json
+      hash: md5
+      md5: 9d0ff24a2bf8ff80432ce67db75df873
+      size: 1067
+  prepare_simuletic:
+    cmd: python -m src.data.prepare_simuletic
+    deps:
+    - path: configs/classes.yaml
+      hash: md5
+      md5: 47328d286b77a7de4c31723e5c1534ed
+      size: 29
+    - path: data/processed/dfire
+      hash: md5
+      md5: 1f634c7118e59fee06f116d14706a544.dir
+      size: 3119159994
+      nfiles: 43056
+    - path: data/raw/simuletic
+      hash: md5
+      md5: 12a68f2f487bed82f8bd4321a1e4bfea.dir
+      size: 340593777
+      nfiles: 480
+    - path: reports/validation_simuletic.json
+      hash: md5
+      md5: 9d0ff24a2bf8ff80432ce67db75df873
+      size: 1067
+    - path: src/data/prepare_simuletic.py
+      hash: md5
+      md5: ad7a85accb4483bcf98f191912110ae3
+      size: 3947
+    - path: src/data/simuletic.py
+      hash: md5
+      md5: ff8cbe8f55e469ec0b8cab30c9b86889
+      size: 2107
+    params:
+      params.yaml:
+        data.processed_dir: data/processed/dfire
+        data.seed: 42
+    outs:
+    - path: data/processed/data.yaml
+      hash: md5
+      md5: e7bbc99fe6c6375adcda4963ba747564
+      size: 165
+    - path: data/processed/simuletic
+      hash: md5
+      md5: f8158d854c1b22b73fdb8c25a4bb8185.dir
+      size: 339241817
+      nfiles: 480
+    - path: reports/simuletic_stats.json
+      hash: md5
+      md5: 4154c1e47355dca658d5ddfbf896b1fd
+      size: 433
