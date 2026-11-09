@@ -62,8 +62,8 @@ stages:
       size: 245
     - path: src/data/prepare.py
       hash: md5
-      md5: 0b9ca16d8759597bab8c3b9ab4d69341
-      size: 3519
+      md5: f7be7b5951a903f157546be2d2ff1e63
+      size: 3495
     params:
       params.yaml:
         data.processed_dir: data/processed/dfire
@@ -71,8 +71,8 @@ stages:
     outs:
     - path: data/processed/dfire
       hash: md5
-      md5: 1bd126c8ce902413ecfd3a2758ddb61f.dir
-      size: 3119160063
+      md5: 1f634c7118e59fee06f116d14706a544.dir
+      size: 3119159994
       nfiles: 43056
     - path: reports/prepare_stats.json
       hash: md5
