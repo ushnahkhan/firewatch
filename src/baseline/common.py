@@ -5,7 +5,12 @@ import random
 from pathlib import Path
 
 import numpy as np
+import torch
+import torch.nn as nn
 import yaml
+from PIL import Image
+from torchvision import transforms
+from torchvision.models import MobileNet_V3_Small_Weights, mobilenet_v3_small
 
 CLASS_NAMES = ["fire", "smoke", "normal"]  # index order used by the classifier only
 CLASS_TO_IDX = {c: i for i, c in enumerate(CLASS_NAMES)}
@@ -52,43 +57,42 @@ def read_items(csv_path, root, split, fraction=1.0, seed=42):
 
 
 def set_seed(seed):
-    import torch
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
 
 
+class FireDataset(torch.utils.data.Dataset):
+    """Module-level (not nested) so DataLoader workers can pickle it on Windows."""
+
+    def __init__(self, items, size, train, aug):
+        self.items, self.size = items, size
+        tfs = [transforms.Resize((size, size))]
+        if train and aug.get("hflip"):
+            tfs.append(transforms.RandomHorizontalFlip())
+        cj = float(aug.get("color_jitter", 0) or 0)
+        if train and cj > 0:
+            tfs.append(transforms.ColorJitter(brightness=cj, contrast=cj, saturation=cj))
+        tfs += [transforms.ToTensor(), transforms.Normalize(MEAN, STD)]
+        self.tf = transforms.Compose(tfs)
+
+    def __len__(self):
+        return len(self.items)
+
+    def __getitem__(self, i):
+        path, y = self.items[i]
+        with Image.open(path) as im:
+            im.draft("RGB", (self.size * 2, self.size * 2))  # fast JPEG downscale on decode
+            im = im.convert("RGB")
+        return self.tf(im), y
+
+
 def make_dataset(items, size, train, aug):
-    import torch
-    from PIL import Image
-    from torchvision import transforms
-
-    tfs = [transforms.Resize((size, size))]
-    if train and aug.get("hflip"):
-        tfs.append(transforms.RandomHorizontalFlip())
-    cj = float(aug.get("color_jitter", 0) or 0)
-    if train and cj > 0:
-        tfs.append(transforms.ColorJitter(brightness=cj, contrast=cj, saturation=cj))
-    tfs += [transforms.ToTensor(), transforms.Normalize(MEAN, STD)]
-    tf = transforms.Compose(tfs)
-
-    class FireDataset(torch.utils.data.Dataset):
-        def __len__(self):
-            return len(items)
-
-        def __getitem__(self, i):
-            path, y = items[i]
-            with Image.open(path) as im:
-                im.draft("RGB", (size * 2, size * 2))  # fast JPEG downscale on decode
-                im = im.convert("RGB")
-            return tf(im), y
-
-    return FireDataset()
+    return FireDataset(items, size, train, aug)
 
 
 def make_loader(items, p, train):
-    import torch
     ds = make_dataset(items, p["img_size"], train, p.get("augment", {}))
     return torch.utils.data.DataLoader(
         ds, batch_size=p["batch_size"], shuffle=train,
@@ -99,9 +103,6 @@ def make_loader(items, p, train):
 
 # ---------- model ----------
 def build_model(pretrained=True, freeze_backbone=False):
-    import torch.nn as nn
-    from torchvision.models import MobileNet_V3_Small_Weights, mobilenet_v3_small
-
     weights = MobileNet_V3_Small_Weights.DEFAULT if pretrained else None
     model = mobilenet_v3_small(weights=weights)
     model.classifier[3] = nn.Linear(model.classifier[3].in_features, len(CLASS_NAMES))

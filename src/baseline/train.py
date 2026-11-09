@@ -95,7 +95,7 @@ def main():
         import mlflow.pytorch
         model.load_state_dict(torch.load(out_dir / "model.pt", map_location=device))
         mlflow.log_metric("best_val_f1", best_f1)
-        mlflow.pytorch.log_model(model.cpu(), artifact_path="model")
+        mlflow.pytorch.log_model(model.cpu(), name="model", serialization_format="pickle")
         mlflow.end_run()
     print("best val macro-F1:", round(best_f1, 4))
 

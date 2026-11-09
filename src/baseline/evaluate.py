@@ -92,12 +92,18 @@ def main():
         rep = classification_report(y_true, y_pred, labels=[0, 1, 2], target_names=CLASS_NAMES,
                                     output_dict=True, zero_division=0)
         cm = confusion_matrix(y_true, y_pred, labels=[0, 1, 2])
+        present = [c for c in CLASS_NAMES if rep[c]["support"] > 0]  # skip classes absent from this set
+
+        def macro(key):
+            return sum(rep[c][key] for c in present) / len(present)
+
         results[es["name"]] = {
             "n_images": len(items),
             "accuracy": rep["accuracy"],
-            "precision": rep["macro avg"]["precision"],
-            "recall": rep["macro avg"]["recall"],
-            "f1": rep["macro avg"]["f1-score"],
+            "precision": macro("precision"),
+            "recall": macro("recall"),
+            "f1": macro("f1-score"),
+            "macro_over_classes": present,
             "per_class": {c: {k: rep[c][k] for k in ("precision", "recall", "f1-score", "support")}
                           for c in CLASS_NAMES},
             "confusion_matrix": cm.tolist(),
