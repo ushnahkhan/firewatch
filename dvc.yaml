@@ -80,7 +80,9 @@ stages:
       - src/baseline/evaluate.py
     params:
       - baseline
+    metrics:
+      - reports/baseline_metrics.json:
+          cache: false
     outs:
-      - reports/baseline_metrics.json
       - reports/baseline_cm_dfire_test_baseline.png
       - reports/baseline_cm_simuletic_test_baseline.png
