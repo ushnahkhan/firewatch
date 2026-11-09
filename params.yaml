@@ -1,0 +1,8 @@
+data:
+  max_bad_bbox_fraction: 0.005
+  raw_dir: data/raw/dfire
+  seed: 42
+  expected_counts:
+    train: 14122
+    val: 3099
+    test: 4306
