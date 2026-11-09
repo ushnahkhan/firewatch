@@ -87,7 +87,7 @@ def main():
         w.writerow(["split", "image_path", "label"])
         w.writerows(rows)
 
-    yaml.safe_dump({"path": str(OUT.resolve()), "train": "train/images",
+        yaml.safe_dump({"train": "train/images",
                     "val": "val/images", "test": "test/images",
                     "names": {int(k): v for k, v in CLASSES.items()}},
                    open(OUT / "data.yaml", "w"), sort_keys=False)
