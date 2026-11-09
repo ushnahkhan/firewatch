@@ -59,3 +59,28 @@ stages:
       - data/processed/simuletic
       - data/processed/data.yaml
       - reports/simuletic_stats.json
+  train_baseline:
+    cmd: python -m src.baseline.train
+    deps:
+      - data/processed/dfire
+      - src/baseline/common.py
+      - src/baseline/train.py
+    params:
+      - baseline
+    outs:
+      - models/baseline
+      - reports/baseline_train_baseline.json
+  evaluate_baseline:
+    cmd: python -m src.baseline.evaluate
+    deps:
+      - data/processed/dfire
+      - data/processed/simuletic
+      - models/baseline
+      - src/baseline/common.py
+      - src/baseline/evaluate.py
+    params:
+      - baseline
+    outs:
+      - reports/baseline_metrics.json
+      - reports/baseline_cm_dfire_test_baseline.png
+      - reports/baseline_cm_simuletic_test_baseline.png
