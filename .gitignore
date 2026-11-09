@@ -218,3 +218,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Project: data, models and tracking
+data/
+models/
+mlruns/
+*.pt
+*.pth
+*.onnx
+.vscode/
