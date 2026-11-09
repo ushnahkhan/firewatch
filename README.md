@@ -1,132 +1,129 @@
-# PDF Tamper Detector — Synthetic Test Kit
+# FireWatch
 
-A labeled set of "original" vs "edited" bank-statement PDFs, plus a working
-detector that scores each file on three independent forensic signals and
-combines them into one confidence number. Built because real bank
-statements aren't something you can legally scrape or download for testing
-— see the note at the bottom.
+FireWatch detects **fire and smoke** in camera images. Deliverable 1 builds the core ML pipeline end to end and makes it fully reproducible:
 
-## Folder layout
+- a **baseline** image classifier (MobileNetV3-small: fire / smoke / normal),
+- a **main model**, a YOLO-nano object detector that draws boxes around fire and smoke,
+- data versioning with **DVC**, experiment tracking and a model registry with **MLflow**, both hosted on **DagsHub**.
+
+Not in this deliverable: Docker, cloud deployment, REST APIs, monitoring.
+
+- GitHub: https://github.com/ushnahkhan/firewatch
+- DagsHub (data + MLflow): https://dagshub.com/ushnahkhan/firewatch
+- MLflow tracking URI: `https://dagshub.com/ushnahkhan/firewatch.mlflow`
+
+**Team:** Ushnah (repo, data, DVC), Ayesha (baseline model), Lamia (detector, MLflow, integration).
+
+## Datasets
+
+| Dataset | Source | Use |
+|---|---|---|
+| D-Fire | Kaggle `sayedgamal99/smoke-fire-detection-yolo` (about 21.5k images, YOLO boxes, own train/val/test split) | training and main test set |
+| Simuletic CCTV | Kaggle `simuletic/cctv-smoke-and-fire-emergency-detection-dataset` (239 usable images, 48 scene variants) | separate domain test; also a small part of detector train/val |
+
+FIRESENSE (Zenodo) is **not used** in this deliverable: it only has video-level labels, no bounding boxes, so a detector cannot be scored on it.
+
+**Class map** (single source of truth: `configs/classes.yaml`): `0 = smoke`, `1 = fire`. This is D-Fire's own order. Simuletic labels are remapped **by class name** in `prepare_simuletic`, so its source order never matters.
+
+## Folder structure
 
 ```
-generators/
-  gen_text_original.py   -> clean, native-text PDF statement
-  gen_text_edited.py     -> same file, tampered via a REAL incremental
-                             update (appends a forged revision, doesn't
-                             touch the original bytes)
-  gen_scan_original.py   -> "scanned" statement: text rendered to an image,
-                             saved as JPEG, wrapped losslessly in a PDF
-  gen_scan_edited.py     -> same scan, one number edited on the pixels and
-                             re-saved at a different JPEG quality
-detector/
-  detector.py             -> the actual analyzer: run it on any PDF(s)
-samples/                  -> the four generated PDFs + renders, already run
+firewatch/
+  README.md  .gitignore  dvc.yaml  dvc.lock  params.yaml  requirements.txt
+  configs/classes.yaml          class map
+  data/                         raw/ and processed/  (DVC-tracked, not in Git)
+  src/data/                     ingest.py, validate.py, validate_stage.py, prepare.py,
+                                simuletic.py, validate_simuletic.py, prepare_simuletic.py
+  src/baseline/                 common.py, train.py, evaluate.py, register.py
+  src/detector/                 train.py, evaluate.py        (detector, Lamia)
+  src/tracking/                 MLflow helpers               (Lamia)
+  reports/                      metrics, validation reports, plots
+  models/                       weights (DVC-tracked, not in Git)
 ```
 
-## Run it
+## Setup
 
 ```bash
-pip install pypdf reportlab pillow numpy scipy img2pdf --break-system-packages
-python3 generators/gen_text_original.py
-python3 generators/gen_text_edited.py
-python3 generators/gen_scan_original.py
-python3 generators/gen_scan_edited.py
-python3 detector/detector.py samples/*.pdf
+git clone https://github.com/ushnahkhan/firewatch.git
+cd firewatch
+python -m venv .venv
+# Windows: .venv\Scripts\Activate.ps1      Linux/Mac: source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
-## Results on the labeled set
+**Credentials are never committed.** Use these on your own machine only:
 
-| file | confidence edited | verdict |
-|---|---|---|
-| text_original.pdf | 0% | LIKELY ORIGINAL |
-| text_edited.pdf | 100% | LIKELY EDITED |
-| scan_original.pdf | 15% | LIKELY ORIGINAL |
-| scan_edited.pdf | 81% | LIKELY EDITED |
+1. **Kaggle:** create a token (Kaggle > Settings > Create New Token) and save `kaggle.json` in `~/.kaggle/` (Windows: `C:\Users\<you>\.kaggle\`).
+2. **DagsHub token:** DagsHub > your avatar > Settings > Tokens. You must be a collaborator on the repo.
+3. **DVC remote (already in `.dvc/config`); add your credentials locally:**
+   ```bash
+   dvc remote modify origin --local auth basic
+   dvc remote modify origin --local user <your-dagshub-username>
+   dvc remote modify origin --local password <your-dagshub-token>
+   ```
+   `--local` writes to `.dvc/config.local`, which Git ignores.
+4. **MLflow** (set in each terminal that trains or evaluates):
+   ```bash
+   export MLFLOW_TRACKING_URI=https://dagshub.com/ushnahkhan/firewatch.mlflow
+   export MLFLOW_TRACKING_USERNAME=<your-dagshub-username>
+   export MLFLOW_TRACKING_PASSWORD=<your-dagshub-token>
+   ```
+   On Windows PowerShell use `$env:MLFLOW_TRACKING_URI="..."` and the same for the other two.
 
-## The three checks
+## How to run
 
-**1. Metadata (`check_metadata`)** — pulls the PDF Info dictionary via
-`pypdf` and flags: ModDate meaningfully after CreationDate, and a
-Producer that reads like a generic editing tool (Acrobat, Photoshop, GIMP,
-Word, etc.) while Creator still shows the "original" generator. This is
-exactly what happens in real life: most editors update Producer on
-resave but don't bother touching Creator.
+**Data pipeline (reproduce from scratch):**
 
-**2. Revision history (`check_revisions`)** — looks for a `/Prev` key in
-a trailer dictionary, which is the spec-correct signature of a PDF
-*incremental update* (most editors append changes rather than rewriting
-the whole file, to keep save times fast). `text_edited.pdf` was built by
-hand-crafting exactly this: the original bytes are 100% untouched, a
-forged content stream + Info dict are appended after them, with a new
-xref/trailer pointing `/Prev` back at the original.
+```bash
+dvc repro
+```
 
-**3. Error Level Analysis (`check_ela`)** — for PDFs with embedded raster
-images (the scanned-statement case), re-saves each image at a fixed test
-quality and diffs it against itself. A patch that was freshly rendered and
-recompressed tends to sit several MADs above the image's own block-error
-baseline. Score is based on that local anomaly (`local_z`), not on
-comparing absolute error levels *between* files — more on why below.
+This runs `ingest`, `validate`, `validate_simuletic`, `prepare`, `prepare_simuletic`, then the baseline stages. `ingest` downloads D-Fire (about 2.8 GB) and Simuletic (about 330 MB) from Kaggle **only if they are missing**. Inspect the pipeline with `dvc status` and `dvc dag`.
 
-## Combining the three scores
+**Getting the data without Kaggle:** `dvc pull` works, but the dataset is about 86,000 small files and DagsHub's free HTTP remote is slow for that (hours). Prefer `dvc repro`. If a pull or push shows 502 or timeout errors, rerun it with fewer parallel jobs: `dvc pull -j 4`.
 
-The three checks are combined as a **probabilistic OR**
-(`confidence = 1 - (1-m)(1-r)(1-e)`), not a weighted average. This
-matters: `scan_edited.pdf` has completely clean metadata and no revision
-trail (a competent forger nailed both), but a strong ELA hotspot. A plain
-average would have diluted that one real signal down to ~28% — below any
-sane threshold — just because the other two channels came back clean.
-With OR-combination it correctly lands at 81%. Real fraud-scoring systems
-use this same logic: one strong independent red flag should dominate, not
-get averaged away by channels that simply don't apply to that forgery
-method.
+**Baseline** (from the repo root, with the MLflow variables set):
 
-## Bugs found and fixed while building this (worth mentioning to your supervisor)
+```bash
+python -m src.baseline.train
+python -m src.baseline.evaluate
+# second configuration for comparison:
+python -m src.baseline.train --set baseline.lr=0.0003 --set baseline.run_name=lr3e-4 --set baseline.out_dir=models/baseline_lr3e-4
+python -m src.baseline.evaluate --set baseline.out_dir=models/baseline_lr3e-4
+# register the best run (chosen by validation F1) in the MLflow registry:
+python -m src.baseline.register
+```
 
-- **`reportlab`'s `drawImage` silently recompresses embedded images** at
-  its own default JPEG quality — any quality setting you chose when
-  saving the source JPEG gets thrown away. Switched to `img2pdf`, which
-  embeds JPEG bytes byte-for-byte.
-- **`pypdf`'s `page.images[i].data` decodes and re-encodes** the image via
-  PIL before handing it back — same problem, one layer up. Fixed by
-  pulling the raw `/DCTDecode` stream via `.get_data()` directly, which
-  for an already-JPEG image returns the untouched compressed bytes.
-- **Naive `%%EOF` byte-scanning gives false positives two ways**: (a) that
-  5-byte sequence can coincidentally appear inside binary image/font
-  data, and (b) a **linearized ("fast web view") PDF legitimately has a
-  second trailer with `/Prev`** even though it was never edited after
-  creation — `img2pdf` does this by default via its pikepdf backend. Fixed
-  by forcing `engine=img2pdf.Engine.internal` in the generators, and by
-  noting in the detector's own output that a `/Prev` hit should be
-  cross-checked against metadata/content, not trusted alone.
+Hyperparameters (image size, batch size, epochs, learning rate, seed, augmentation) live in `params.yaml` under `baseline:`. Use `baseline.subset_fraction` (for example `0.1`) to develop on a subset; run `1.0` for the full data. Use `baseline.num_workers=0` if data loading errors on your machine.
 
-## Honest limitations
+**Detector:** see `src/detector/` (Lamia). Train on `data/processed/data.yaml`; evaluate Simuletic separately with `data/processed/simuletic/data.yaml`.
 
-- **ELA is much noisier on text-dense scans than on photographs.** Text
-  edges are naturally high-frequency and produce elevated block error
-  everywhere, not just at a tamper site — this is a known, documented
-  weakness of ELA, not a bug in this implementation. On a real scanned
-  statement, expect more false hotspots than on a clean photo. Consider
-  pairing it with copy-move detection (`cv2.ORB`/`cv2.SIFT` keypoint
-  matching) for a second, independent pixel-level signal.
-- **The revision-history check can false-positive on linearized PDFs.**
-  Treat a `/Prev` hit as "resaved at some point," not automatically
-  "edited with fraudulent intent" — plenty of legitimate PDF workflows
-  (print-to-PDF, "optimize for web" in Acrobat) linearize without any
-  content change.
-- **Thresholds here (0.4 verdict cutoff, the ELA calibration constants)
-  are tuned against exactly 4 labeled files.** Before trusting this on
-  real documents, generate many more synthetic pairs (vary account
-  numbers, tamper types, JPEG qualities, editors) and recalibrate.
+## Data validation
 
-## Where the "data" actually comes from
+`validate` (D-Fire) and `validate_simuletic` fail the pipeline, with a JSON report in `reports/`, on: missing or orphan label files, unreadable images, label lines without 5 fields, invalid class ids, boxes outside 0 to 1 or with non-positive size, class-order mismatch against `configs/classes.yaml`, filename overlap between splits, and (Simuletic) a scene variant appearing in more than one split. Out-of-range D-Fire boxes are a warning below a small threshold (`max_bad_bbox_fraction`) and are cleaned in `prepare`.
 
-There's no legitimate downloadable dataset of real people's bank
-statements you could ethically use for this — anything claiming to be
-that is either fabricated for loan-fraud purposes or leaked personal
-data, and neither belongs in a university project. Generating your own
-synthetic originals + tampered pairs (what this kit does) is the actual
-standard approach in document-forensics research, because it's the only
-way to get labeled ground truth. If you want more realistic scanned-
-document *textures/layouts* to test robustness (not fraud-labeled, but
-real and free to use): **SROIE** and **FUNSD** (scanned receipts/forms),
-**RVL-CDIP** (scanned document classification).
+What `prepare` does to D-Fire: 18 zero-size boxes are dropped and 379 boxes that overhang the image edge are clipped to the image. It also writes `baseline_labels.csv`: an image is `fire` if it has any fire box, else `smoke` if it has any smoke box, else `normal`.
+
+One Simuletic image (`fire_detected_var16_img3`) has no label file; it is excluded via `data.simuletic_exclude` in `params.yaml` and listed in `reports/validation_simuletic.json`.
+
+## Results
+
+| Model | Test set | Precision | Recall | F1 | mAP@0.5 | Inference (ms) |
+|---|---|---|---|---|---|---|
+| Baseline (MobileNetV3-small) | D-Fire test | 0.775 | 0.798 | 0.773 | n/a | ~25 |
+| Baseline (MobileNetV3-small) | Simuletic test | 0.831 | 0.817 | 0.824 | n/a | ~26 |
+| Detector (YOLO nano) | D-Fire test | | | | | |
+| Detector (YOLO nano) | Simuletic test | | | | | |
+
+Baseline rows are the registered run `baseline-v1` (macro averages; Simuletic macro covers fire and smoke only because it has no `normal` images). Detector rows are filled in from `reports/detector_metrics.json`.
+
+## Known limits
+
+- Simuletic is small and synthetic: its test split is 50 images (30 fire, 20 smoke, no normal), so scores there are rough indications only.
+- Fog vs smoke confusion and night scenes are known weak spots and are not addressed here.
+- The baseline was trained on a 10% subset for 2 epochs on CPU to fit the time available; the settings are recorded in `params.yaml` and in each MLflow run. The two baseline configurations are within noise of each other.
+- FIRESENSE was dropped (no bounding boxes).
+
+## Git workflow
+
+Branches `feat/data`, `feat/baseline`, `feat/detector`; changes go through pull requests reviewed by another member. No raw data, model weights, `.env` or tokens in Git (see `.gitignore`).
