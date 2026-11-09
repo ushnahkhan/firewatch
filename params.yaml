@@ -1,5 +1,6 @@
 data:
   max_bad_bbox_fraction: 0.005
+  processed_dir: data/processed/dfire
   raw_dir: data/raw/dfire
   seed: 42
   expected_counts:
