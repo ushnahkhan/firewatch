@@ -21,7 +21,7 @@ Not in this deliverable: Docker, cloud deployment, REST APIs, monitoring.
 | D-Fire | Kaggle `sayedgamal99/smoke-fire-detection-yolo` (about 21.5k images, YOLO boxes, own train/val/test split) | training and main test set |
 | Simuletic CCTV | Kaggle `simuletic/cctv-smoke-and-fire-emergency-detection-dataset` (239 usable images, 48 scene variants) | separate domain test; also a small part of detector train/val |
 
-FIRESENSE (Zenodo) is **not used** in this deliverable: it only has video-level labels, no bounding boxes, so a detector cannot be scored on it.
+FIRESENSE (Zenodo) is **not used** in this deliverable: its Zenodo record describes only per-video positive/negative labels (no bounding boxes are mentioned), so a detector cannot be scored on it with box metrics.
 
 **Class map** (single source of truth: `configs/classes.yaml`): `0 = smoke`, `1 = fire`. This is D-Fire's own order. Simuletic labels are remapped **by class name** in `prepare_simuletic`, so its source order never matters.
 
@@ -110,7 +110,7 @@ One Simuletic image (`fire_detected_var16_img3`) has no label file; it is exclud
 
 | Model | Test set | Precision | Recall | F1 | mAP@0.5 | Inference (ms) |
 |---|---|---|---|---|---|---|
-| Baseline (MobileNetV3-small) | D-Fire test | 0.775 | 0.798 | 0.773 | n/a | ~25 |
+| Baseline (MobileNetV3-small) | D-Fire test | 0.775 | 0.798 | 0.772 | n/a | ~25 |
 | Baseline (MobileNetV3-small) | Simuletic test | 0.831 | 0.817 | 0.824 | n/a | ~26 |
 | Detector (YOLO nano) | D-Fire test | | | | | |
 | Detector (YOLO nano) | Simuletic test | | | | | |
@@ -119,7 +119,7 @@ Baseline rows are the registered run `baseline-v1` (macro averages; Simuletic ma
 
 ## Known limits
 
-- Simuletic is small and synthetic: its test split is 50 images (30 fire, 20 smoke, no normal), so scores there are rough indications only.
+- Simuletic is small and possibly staged or simulated: its test split is 50 images (30 fire, 20 smoke, no normal), so scores there are rough indications only.
 - Fog vs smoke confusion and night scenes are known weak spots and are not addressed here.
 - The baseline was trained on a 10% subset for 2 epochs on CPU to fit the time available; the settings are recorded in `params.yaml` and in each MLflow run. The two baseline configurations are within noise of each other.
 - FIRESENSE was dropped (no bounding boxes).
