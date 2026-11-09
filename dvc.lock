@@ -1,0 +1,80 @@
+schema: '2.0'
+stages:
+  ingest:
+    cmd: python -m src.data.ingest
+    deps:
+    - path: src/data/ingest.py
+      hash: md5
+      md5: 92b4d1c67cac9c97a594ee9c31dc1a1e
+      size: 2054
+    params:
+      params.yaml:
+        data.raw_dir: data/raw/dfire
+    outs:
+    - path: data/raw/dfire
+      hash: md5
+      md5: 383a5c7d7402312ff7d147051659d479.dir
+      size: 3118334483
+      nfiles: 43055
+  validate:
+    cmd: python -m src.data.validate_stage
+    deps:
+    - path: configs/classes.yaml
+      hash: md5
+      md5: 47328d286b77a7de4c31723e5c1534ed
+      size: 29
+    - path: data/raw/dfire
+      hash: md5
+      md5: 383a5c7d7402312ff7d147051659d479.dir
+      size: 3118334483
+      nfiles: 43055
+    - path: src/data/validate.py
+      hash: md5
+      md5: 10687352b48da1db750d59d830da792d
+      size: 4257
+    - path: src/data/validate_stage.py
+      hash: md5
+      md5: 154e2276ced3e9344290009bf807d3fd
+      size: 668
+    params:
+      params.yaml:
+        data.max_bad_bbox_fraction: 0.005
+    outs:
+    - path: reports/validation_report.json
+      hash: md5
+      md5: 2e48f13a092c62c51ace33315d3db4b9
+      size: 245
+  prepare:
+    cmd: python src/data/prepare.py
+    deps:
+    - path: configs/classes.yaml
+      hash: md5
+      md5: 47328d286b77a7de4c31723e5c1534ed
+      size: 29
+    - path: data/raw/dfire
+      hash: md5
+      md5: 383a5c7d7402312ff7d147051659d479.dir
+      size: 3118334483
+      nfiles: 43055
+    - path: reports/validation_report.json
+      hash: md5
+      md5: 2e48f13a092c62c51ace33315d3db4b9
+      size: 245
+    - path: src/data/prepare.py
+      hash: md5
+      md5: 0b9ca16d8759597bab8c3b9ab4d69341
+      size: 3519
+    params:
+      params.yaml:
+        data.processed_dir: data/processed/dfire
+        data.raw_dir: data/raw/dfire
+    outs:
+    - path: data/processed/dfire
+      hash: md5
+      md5: 1bd126c8ce902413ecfd3a2758ddb61f.dir
+      size: 3119160063
+      nfiles: 43056
+    - path: reports/prepare_stats.json
+      hash: md5
+      md5: bfc0f556f5fa0f63debea53868deb44a
+      size: 657

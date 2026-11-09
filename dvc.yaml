@@ -1,0 +1,34 @@
+stages:
+  ingest:
+    cmd: python -m src.data.ingest
+    deps:
+      - src/data/ingest.py
+    params:
+      - data.raw_dir
+    outs:
+      - data/raw/dfire:
+          persist: true   # keep existing files so a re-run does not re-download 2.8 GB
+  validate:
+    cmd: python -m src.data.validate_stage
+    deps:
+      - data/raw/dfire
+      - src/data/validate.py
+      - src/data/validate_stage.py
+      - configs/classes.yaml
+    params:
+      - data.max_bad_bbox_fraction
+    outs:
+      - reports/validation_report.json
+  prepare:
+    cmd: python src/data/prepare.py
+    deps:
+      - data/raw/dfire
+      - reports/validation_report.json
+      - src/data/prepare.py
+      - configs/classes.yaml
+    params:
+      - data.raw_dir
+      - data.processed_dir
+    outs:
+      - data/processed/dfire
+      - reports/prepare_stats.json
