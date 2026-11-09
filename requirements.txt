@@ -1,0 +1,15 @@
+torch
+torchvision
+ultralytics
+mlflowyp;
+dagshub
+dvc
+pandas
+numpy
+pillow
+pyyaml
+scikit-learn
+matplotlib
+opencv-python
+kaggle
+requests
