@@ -1,7 +1,7 @@
-"""Stage ingest: make sure D-Fire is present in data.raw_dir.
+"""Stage ingest: make sure D-Fire and Simuletic are present.
 
-Downloads from Kaggle only when the data is missing or incomplete, then verifies
-the image counts per split. Needs the kaggle CLI (venv active) and ~/.kaggle/kaggle.json.
+Downloads from Kaggle only when data is missing or incomplete, then verifies
+counts. Needs the kaggle CLI (venv active) and ~/.kaggle/kaggle.json.
 """
 import json
 import shutil
@@ -39,6 +39,20 @@ def download(slug, raw, attempts=3):
     sys.exit("download failed after retries - check your connection and kaggle.json")
 
 
+SIMULETIC_SLUG = "simuletic/cctv-smoke-and-fire-emergency-detection-dataset"
+
+
+def ensure_simuletic(P):
+    raw = Path(P.get("simuletic_dir", "data/raw/simuletic"))
+    if not list(raw.rglob("data.yaml")):
+        print(f"Simuletic missing in {raw}; downloading {SIMULETIC_SLUG}")
+        download(SIMULETIC_SLUG, raw)
+    n = sum(1 for p in raw.rglob("*") if p.suffix.lower() in IMG_EXT)
+    if n == 0:
+        sys.exit(f"Simuletic ingest check failed: no images under {raw}")
+    return n
+
+
 def main():
     P = yaml.safe_load(open("params.yaml"))["data"]
     raw = Path(P["raw_dir"])
@@ -52,7 +66,9 @@ def main():
         have = counts(raw, expected)
     if have != expected:
         sys.exit(f"ingest check failed: expected {expected}, found {have}")
-    print(json.dumps({"dataset": slug, "dir": str(raw), "images": have}, indent=2))
+    n_sim = ensure_simuletic(P)
+    print(json.dumps({"dataset": slug, "dir": str(raw), "images": have,
+                      "simuletic_images": n_sim}, indent=2))
 
 
 if __name__ == "__main__":

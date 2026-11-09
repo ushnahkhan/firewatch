@@ -7,7 +7,9 @@ stages:
       - data.raw_dir
     outs:
       - data/raw/dfire:
-          persist: true   # keep existing files so a re-run does not re-download 2.8 GB
+          persist: true   # keep existing files so a re-run does not re-download
+      - data/raw/simuletic:
+          persist: true
   validate:
     cmd: python -m src.data.validate_stage
     deps:
@@ -19,6 +21,15 @@ stages:
       - data.max_bad_bbox_fraction
     outs:
       - reports/validation_report.json
+  validate_simuletic:
+    cmd: python -m src.data.validate_simuletic
+    deps:
+      - data/raw/simuletic
+      - src/data/validate_simuletic.py
+      - src/data/simuletic.py
+      - configs/classes.yaml
+    outs:
+      - reports/validation_simuletic.json
   prepare:
     cmd: python src/data/prepare.py
     deps:
@@ -32,3 +43,19 @@ stages:
     outs:
       - data/processed/dfire
       - reports/prepare_stats.json
+  prepare_simuletic:
+    cmd: python -m src.data.prepare_simuletic
+    deps:
+      - data/raw/simuletic
+      - data/processed/dfire
+      - reports/validation_simuletic.json
+      - src/data/prepare_simuletic.py
+      - src/data/simuletic.py
+      - configs/classes.yaml
+    params:
+      - data.processed_dir
+      - data.seed
+    outs:
+      - data/processed/simuletic
+      - data/processed/data.yaml
+      - reports/simuletic_stats.json
