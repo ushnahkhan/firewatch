@@ -1,0 +1,101 @@
+{
+  "dfire_test": {
+    "n_images": 4306,
+    "accuracy": 0.7693915466790525,
+    "precision": 0.7749505875948093,
+    "recall": 0.7975856141023083,
+    "f1": 0.7724696533096603,
+    "macro_over_classes": [
+      "fire",
+      "smoke",
+      "normal"
+    ],
+    "per_class": {
+      "fire": {
+        "precision": 0.7936507936507936,
+        "recall": 0.9417040358744395,
+        "f1-score": 0.8613617719442166,
+        "support": 1115.0
+      },
+      "smoke": {
+        "precision": 0.6019292604501608,
+        "recall": 0.7892074198988196,
+        "f1-score": 0.6829624224735498,
+        "support": 1186.0
+      },
+      "normal": {
+        "precision": 0.9292717086834734,
+        "recall": 0.6618453865336659,
+        "f1-score": 0.7730847655112146,
+        "support": 2005.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        1050,
+        45,
+        20
+      ],
+      [
+        169,
+        936,
+        81
+      ],
+      [
+        104,
+        574,
+        1327
+      ]
+    ],
+    "inference_ms": 24.93067699484527
+  },
+  "simuletic_test": {
+    "n_images": 50,
+    "accuracy": 0.82,
+    "precision": 0.8310344827586207,
+    "recall": 0.8166666666666667,
+    "f1": 0.823728813559322,
+    "macro_over_classes": [
+      "fire",
+      "smoke"
+    ],
+    "per_class": {
+      "fire": {
+        "precision": 0.8620689655172413,
+        "recall": 0.8333333333333334,
+        "f1-score": 0.847457627118644,
+        "support": 30.0
+      },
+      "smoke": {
+        "precision": 0.8,
+        "recall": 0.8,
+        "f1-score": 0.8,
+        "support": 20.0
+      },
+      "normal": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1-score": 0.0,
+        "support": 0.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        25,
+        4,
+        1
+      ],
+      [
+        4,
+        16,
+        0
+      ],
+      [
+        0,
+        0,
+        0
+      ]
+    ],
+    "inference_ms": 25.59056800790131
+  }
+}
