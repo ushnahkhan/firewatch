@@ -135,10 +135,10 @@ One Simuletic image (`fire_detected_var16_img3`) has no label file; it is exclud
 |---|---|---|---|---|---|---|
 | Baseline (MobileNetV3-small) | D-Fire test | 0.775 | 0.798 | 0.772 | n/a | ~25 |
 | Baseline (MobileNetV3-small) | Simuletic test | 0.831 | 0.817 | 0.824 | n/a | ~26 |
-| Detector (YOLO nano) | D-Fire test | | | | | |
-| Detector (YOLO nano) | Simuletic test | | | | | |
+| Detector (YOLO nano) | D-Fire test | 0.922 | 0.902 | 0.911 | 0.733 | ~74 |
+| Detector (YOLO nano) | Simuletic test | 1.000 | 0.967 | 0.983 | 0.846 | ~162 |
 
-Baseline rows are the registered run `baseline-v1` (macro averages; Simuletic macro covers fire and smoke only because it has no `normal` images). Detector rows are filled in from `reports/detector_metrics.json` (image-level P / R / F1, box-level mAP); the full comparison is in `reports/comparison.md`.
+Baseline rows are the registered run `baseline-v1` (macro averages; Simuletic macro covers fire and smoke only because it has no `normal` images). Detector rows are the registered run `detector-lr2e-3` (`firewatch-detector`, stage Staging; chosen by validation mAP@0.5:0.95, 0.423 vs 0.405 for `detector-v1`). P / R / F1 are image-level (same labels and macro rule as the baseline), mAP@0.5 is box-level. Box-level P / R on D-Fire test: 0.720 / 0.674, mAP@0.5:0.95 0.413. `reports/comparison.md` is the output of the `compare` stage for the pipeline default `detector-v1` (lr0 0.01; D-Fire image F1 0.882, mAP@0.5 0.703). Inference is ms per image on CPU, batch size 1, but the baseline was timed on a laptop and the detector on a Colab CPU, so the speeds are not directly comparable.
 
 ## Known limits
 
@@ -146,6 +146,9 @@ Baseline rows are the registered run `baseline-v1` (macro averages; Simuletic ma
 - Fog vs smoke confusion and night scenes are known weak spots and are not addressed here.
 - The baseline was trained on a 10% subset for 2 epochs on CPU to fit the time available; the settings are recorded in `params.yaml` and in each MLflow run. The two baseline configurations are within noise of each other.
 - FIRESENSE was dropped (no bounding boxes).
+- The detector was trained for 15 epochs on a Colab T4 GPU (full D-Fire train split); it has not been tuned further. Smoke is its weakest class: on D-Fire test 199 of 1,186 smoke images are predicted as normal.
+- `dvc.lock` comes from the Linux (Colab) run. `.gitattributes` forces LF line endings so the hashes match on Windows too; outputs written by a pipeline run on Windows can still hash differently, so use Linux or Colab for `dvc repro`.
+- `train_baseline` and `evaluate_baseline` were run directly, not through `dvc repro`, so they are not in `dvc.lock` yet and `dvc status` lists them.
 
 ## Git workflow
 
