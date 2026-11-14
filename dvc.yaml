@@ -86,3 +86,65 @@ stages:
     outs:
       - reports/baseline_cm_dfire_test_baseline.png
       - reports/baseline_cm_simuletic_test_baseline.png
+  train_detector:
+    cmd: python -m src.detector.train
+    deps:
+      - data/processed/dfire
+      - data/processed/simuletic
+      - data/processed/data.yaml
+      - src/detector/train.py
+      - src/tracking/mlflow_utils.py
+      - src/baseline/common.py
+    params:
+      - detector.model
+      - detector.data
+      - detector.imgsz
+      - detector.epochs
+      - detector.batch
+      - detector.lr0
+      - detector.optimizer
+      - detector.patience
+      - detector.fraction
+      - detector.seed
+      - detector.run_name
+      - detector.out_dir
+    outs:
+      - models/detector
+    plots:
+      - reports/detector_train_detector.json:
+          cache: false
+          x: epoch
+          y: val_map50_95
+  evaluate_detector:
+    cmd: python -m src.detector.evaluate
+    deps:
+      - data/processed/dfire
+      - data/processed/simuletic
+      - data/processed/data.yaml
+      - models/detector
+      - src/detector/evaluate.py
+      - src/tracking/mlflow_utils.py
+      - src/baseline/common.py
+      - src/baseline/evaluate.py
+    params:
+      - detector.imgsz
+      - detector.batch
+      - detector.conf
+      - detector.out_dir
+      - detector.eval_sets
+    metrics:
+      - reports/detector_metrics.json:
+          cache: false
+    outs:
+      - reports/detector_eval_detector
+  compare:
+    cmd: python -m src.compare
+    deps:
+      - reports/baseline_metrics.json
+      - reports/detector_metrics.json
+      - src/compare.py
+    outs:
+      - reports/comparison.md:
+          cache: false
+      - reports/comparison.png:
+          cache: false
