@@ -5,8 +5,8 @@ stages:
     deps:
     - path: src/data/ingest.py
       hash: md5
-      md5: 836ae59b986cd77911a6c9b36111c77e
-      size: 2619
+      md5: 1318fdec2c4ec87ed37ef678e5440a8f
+      size: 2545
     params:
       params.yaml:
         data.raw_dir: data/raw/dfire
@@ -26,8 +26,8 @@ stages:
     deps:
     - path: configs/classes.yaml
       hash: md5
-      md5: 47328d286b77a7de4c31723e5c1534ed
-      size: 29
+      md5: a0e7d62e9a376d7f2f01224014c7a49a
+      size: 27
     - path: data/raw/dfire
       hash: md5
       md5: 383a5c7d7402312ff7d147051659d479.dir
@@ -35,27 +35,27 @@ stages:
       nfiles: 43055
     - path: src/data/validate.py
       hash: md5
-      md5: 10687352b48da1db750d59d830da792d
-      size: 4257
+      md5: e068fc9041e5e3d516cb07ab712d64e7
+      size: 4148
     - path: src/data/validate_stage.py
       hash: md5
-      md5: 154e2276ced3e9344290009bf807d3fd
-      size: 668
+      md5: 2747a183fd876d865163177a8bc8e096
+      size: 651
     params:
       params.yaml:
         data.max_bad_bbox_fraction: 0.005
     outs:
     - path: reports/validation_report.json
       hash: md5
-      md5: 2e48f13a092c62c51ace33315d3db4b9
-      size: 245
+      md5: 51771e82ceb6aa5edb94a49a6bb56e21
+      size: 236
   prepare:
     cmd: python src/data/prepare.py
     deps:
     - path: configs/classes.yaml
       hash: md5
-      md5: 47328d286b77a7de4c31723e5c1534ed
-      size: 29
+      md5: a0e7d62e9a376d7f2f01224014c7a49a
+      size: 27
     - path: data/raw/dfire
       hash: md5
       md5: 383a5c7d7402312ff7d147051659d479.dir
@@ -63,12 +63,12 @@ stages:
       nfiles: 43055
     - path: reports/validation_report.json
       hash: md5
-      md5: 2e48f13a092c62c51ace33315d3db4b9
-      size: 245
+      md5: 51771e82ceb6aa5edb94a49a6bb56e21
+      size: 236
     - path: src/data/prepare.py
       hash: md5
-      md5: f7be7b5951a903f157546be2d2ff1e63
-      size: 3495
+      md5: 59c3657c3ecf262e76f9f87f3ec76bdc
+      size: 3395
     params:
       params.yaml:
         data.processed_dir: data/processed/dfire
@@ -76,20 +76,20 @@ stages:
     outs:
     - path: data/processed/dfire
       hash: md5
-      md5: 1f634c7118e59fee06f116d14706a544.dir
-      size: 3119159994
+      md5: 214756cc879dff9e3d318a6b472f9922.dir
+      size: 3119133449
       nfiles: 43056
     - path: reports/prepare_stats.json
       hash: md5
-      md5: bfc0f556f5fa0f63debea53868deb44a
-      size: 657
+      md5: b1a099ffb906695d7a897036ed221aa4
+      size: 620
   validate_simuletic:
     cmd: python -m src.data.validate_simuletic
     deps:
     - path: configs/classes.yaml
       hash: md5
-      md5: 47328d286b77a7de4c31723e5c1534ed
-      size: 29
+      md5: a0e7d62e9a376d7f2f01224014c7a49a
+      size: 27
     - path: data/raw/simuletic
       hash: md5
       md5: 12a68f2f487bed82f8bd4321a1e4bfea.dir
@@ -97,28 +97,28 @@ stages:
       nfiles: 480
     - path: src/data/simuletic.py
       hash: md5
-      md5: ff8cbe8f55e469ec0b8cab30c9b86889
-      size: 2107
+      md5: a7bc31b377b58fc49b2b5e9b6e76b8c3
+      size: 2049
     - path: src/data/validate_simuletic.py
       hash: md5
-      md5: 41752cddd0a005a86becc3d3e62c2615
-      size: 4195
+      md5: c783363b3e4a2ff4cbde43cb180de6f5
+      size: 4091
     outs:
     - path: reports/validation_simuletic.json
       hash: md5
-      md5: 9d0ff24a2bf8ff80432ce67db75df873
-      size: 1067
+      md5: d08d554e0f0a1fc6037a34ad4e424e1a
+      size: 1005
   prepare_simuletic:
     cmd: python -m src.data.prepare_simuletic
     deps:
     - path: configs/classes.yaml
       hash: md5
-      md5: 47328d286b77a7de4c31723e5c1534ed
-      size: 29
+      md5: a0e7d62e9a376d7f2f01224014c7a49a
+      size: 27
     - path: data/processed/dfire
       hash: md5
-      md5: 1f634c7118e59fee06f116d14706a544.dir
-      size: 3119159994
+      md5: 214756cc879dff9e3d318a6b472f9922.dir
+      size: 3119133449
       nfiles: 43056
     - path: data/raw/simuletic
       hash: md5
@@ -127,16 +127,16 @@ stages:
       nfiles: 480
     - path: reports/validation_simuletic.json
       hash: md5
-      md5: 9d0ff24a2bf8ff80432ce67db75df873
-      size: 1067
+      md5: d08d554e0f0a1fc6037a34ad4e424e1a
+      size: 1005
     - path: src/data/prepare_simuletic.py
       hash: md5
-      md5: ad7a85accb4483bcf98f191912110ae3
-      size: 3947
+      md5: 92f7dbb15e85649b6b41e81afc6099f8
+      size: 3855
     - path: src/data/simuletic.py
       hash: md5
-      md5: ff8cbe8f55e469ec0b8cab30c9b86889
-      size: 2107
+      md5: a7bc31b377b58fc49b2b5e9b6e76b8c3
+      size: 2049
     params:
       params.yaml:
         data.processed_dir: data/processed/dfire
@@ -144,14 +144,154 @@ stages:
     outs:
     - path: data/processed/data.yaml
       hash: md5
-      md5: e7bbc99fe6c6375adcda4963ba747564
-      size: 165
+      md5: 694d3bcd7a212bc646eb938e6787a2ff
+      size: 154
     - path: data/processed/simuletic
       hash: md5
-      md5: f8158d854c1b22b73fdb8c25a4bb8185.dir
-      size: 339241817
+      md5: 22a063121c8e5310acc2e35b0b532bac.dir
+      size: 339241549
       nfiles: 480
     - path: reports/simuletic_stats.json
       hash: md5
-      md5: 4154c1e47355dca658d5ddfbf896b1fd
-      size: 433
+      md5: f35f13719ce04b16fd8f4385f0ce526e
+      size: 405
+  train_detector:
+    cmd: python -m src.detector.train
+    deps:
+    - path: data/processed/data.yaml
+      hash: md5
+      md5: 694d3bcd7a212bc646eb938e6787a2ff
+      size: 154
+    - path: data/processed/dfire
+      hash: md5
+      md5: 5fbd78b29a03de10ee28792edb51b264.dir
+      size: 3129382774
+      nfiles: 43058
+    - path: data/processed/simuletic
+      hash: md5
+      md5: 22a063121c8e5310acc2e35b0b532bac.dir
+      size: 339241549
+      nfiles: 480
+    - path: src/baseline/common.py
+      hash: md5
+      md5: 477ebb9ae11e2f429f2a51c3a5ff78ae
+      size: 3876
+    - path: src/detector/train.py
+      hash: md5
+      md5: 02d377b755e8ce172a339c2fa23c3b0d
+      size: 5104
+    - path: src/tracking/mlflow_utils.py
+      hash: md5
+      md5: 63458700f251df67c9c99a4d9fa5a89d
+      size: 2163
+    params:
+      params.yaml:
+        detector.batch: 32
+        detector.data: data/processed/data.yaml
+        detector.epochs: 15
+        detector.fraction: 1.0
+        detector.imgsz: 640
+        detector.lr0: 0.01
+        detector.model: yolov8n.pt
+        detector.optimizer: SGD
+        detector.out_dir: models/detector
+        detector.patience: 50
+        detector.run_name: detector-v1
+        detector.seed: 42
+    outs:
+    - path: models/detector
+      hash: md5
+      md5: 49b804831aa8b8c2db7b7edac8e167fd.dir
+      size: 6774680
+      nfiles: 5
+    - path: reports/detector_train_detector.json
+      hash: md5
+      md5: aa065653c9e9e685b3039e31f30737d3
+      size: 5136
+  evaluate_detector:
+    cmd: python -m src.detector.evaluate
+    deps:
+    - path: data/processed/data.yaml
+      hash: md5
+      md5: 694d3bcd7a212bc646eb938e6787a2ff
+      size: 154
+    - path: data/processed/dfire
+      hash: md5
+      md5: 0111666737c9ec977b5d7902d8104c0e.dir
+      size: 3132571903
+      nfiles: 43059
+    - path: data/processed/simuletic
+      hash: md5
+      md5: ce6327ae9a41525f6c2a99ba9118ba7e.dir
+      size: 339252517
+      nfiles: 481
+    - path: models/detector
+      hash: md5
+      md5: 49b804831aa8b8c2db7b7edac8e167fd.dir
+      size: 6774680
+      nfiles: 5
+    - path: src/baseline/common.py
+      hash: md5
+      md5: 477ebb9ae11e2f429f2a51c3a5ff78ae
+      size: 3876
+    - path: src/baseline/evaluate.py
+      hash: md5
+      md5: c29c173f2a4a597fb6648faf631f3894
+      size: 5120
+    - path: src/detector/evaluate.py
+      hash: md5
+      md5: 12cabc816ddb3b11a6324d53e75efc35
+      size: 6610
+    - path: src/tracking/mlflow_utils.py
+      hash: md5
+      md5: 63458700f251df67c9c99a4d9fa5a89d
+      size: 2163
+    params:
+      params.yaml:
+        detector.batch: 32
+        detector.conf: 0.25
+        detector.eval_sets:
+        - name: dfire_test
+          data: data/processed/data.yaml
+          root: data/processed/dfire
+          split: test
+        - name: simuletic_test
+          data: data/processed/simuletic/data.yaml
+          root: data/processed/simuletic
+          split: test
+        detector.imgsz: 640
+        detector.out_dir: models/detector
+    outs:
+    - path: reports/detector_eval_detector
+      hash: md5
+      md5: 758f246f766f50ff7bd12dfab5b101d7.dir
+      size: 530713
+      nfiles: 6
+    - path: reports/detector_metrics.json
+      hash: md5
+      md5: 5d101723d3044feaa1ed506359c69a95
+      size: 3901
+  compare:
+    cmd: python -m src.compare
+    deps:
+    - path: reports/baseline_metrics.json
+      hash: md5
+      md5: 06320c3a5ce0bfda660ec3ada3526121
+      size: 1926
+    - path: reports/detector_metrics.json
+      hash: md5
+      md5: 5d101723d3044feaa1ed506359c69a95
+      size: 3901
+    - path: src/compare.py
+      hash: md5
+      md5: f7c235e5350694cd07f680e78ac3c27c
+      size: 3461
+    outs:
+    - path: reports/comparison.md
+      hash: md5
+      md5: 4c84d998d8665a3d59ac8696e32fffae
+      size: 1133
+    - path: reports/comparison.png
+      hash: md5
+      md5: 44311ed3d0ae515e213ac3f852857864
+      size: 36335
