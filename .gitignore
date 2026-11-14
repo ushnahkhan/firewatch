@@ -223,7 +223,9 @@ __marimo__/
 /data/
 /models/
 /mlruns/
+/runs/
 *.pt
 *.pth
 *.onnx
 .vscode/
+docs/

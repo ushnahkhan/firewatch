@@ -2,3 +2,5 @@
 /prepare_stats.json
 /validation_simuletic.json
 /simuletic_stats.json
+/detector_eval_detector
+/detector_eval_detector_lr2e-3

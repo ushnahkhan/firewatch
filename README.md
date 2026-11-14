@@ -35,8 +35,10 @@ firewatch/
   src/data/                     ingest.py, validate.py, validate_stage.py, prepare.py,
                                 simuletic.py, validate_simuletic.py, prepare_simuletic.py
   src/baseline/                 common.py, train.py, evaluate.py, register.py
-  src/detector/                 train.py, evaluate.py        (detector, Lamia)
-  src/tracking/                 MLflow helpers               (Lamia)
+  src/detector/                 train.py, evaluate.py        YOLO nano detector
+  src/tracking/                 mlflow_utils.py, register.py MLflow helpers, detector registry
+  src/compare.py                baseline vs detector table and plot
+  notebooks/                    train_detector_colab.ipynb   (GPU run of the detector stages)
   reports/                      metrics, validation reports, plots
   models/                       weights (DVC-tracked, not in Git)
 ```
@@ -78,7 +80,7 @@ pip install -r requirements.txt
 dvc repro
 ```
 
-This runs `ingest`, `validate`, `validate_simuletic`, `prepare`, `prepare_simuletic`, then the baseline stages. `ingest` downloads D-Fire (about 2.8 GB) and Simuletic (about 330 MB) from Kaggle **only if they are missing**. Inspect the pipeline with `dvc status` and `dvc dag`.
+This runs `ingest`, `validate`, `validate_simuletic`, `prepare`, `prepare_simuletic`, then the baseline stages (`train_baseline`, `evaluate_baseline`), the detector stages (`train_detector`, `evaluate_detector`) and `compare`. `ingest` downloads D-Fire (about 2.8 GB) and Simuletic (about 330 MB) from Kaggle **only if they are missing**. Inspect the pipeline with `dvc status` and `dvc dag`.
 
 **Getting the data without Kaggle:** `dvc pull` works, but the dataset is about 86,000 small files and DagsHub's free HTTP remote is slow for that (hours). Prefer `dvc repro`. If a pull or push shows 502 or timeout errors, rerun it with fewer parallel jobs: `dvc pull -j 4`.
 
@@ -96,7 +98,28 @@ python -m src.baseline.register
 
 Hyperparameters (image size, batch size, epochs, learning rate, seed, augmentation) live in `params.yaml` under `baseline:`. Use `baseline.subset_fraction` (for example `0.1`) to develop on a subset; run `1.0` for the full data. Use `baseline.num_workers=0` if data loading errors on your machine.
 
-**Detector:** see `src/detector/` (Lamia). Train on `data/processed/data.yaml`; evaluate Simuletic separately with `data/processed/simuletic/data.yaml`.
+**Detector** (YOLOv8 nano; needs a GPU for the full data, see below):
+
+```bash
+dvc repro evaluate_detector          # = python -m src.detector.train, then python -m src.detector.evaluate
+# second configuration for comparison:
+python -m src.detector.train --set detector.lr0=0.002 --set detector.run_name=detector-lr2e-3 --set detector.out_dir=models/detector_lr2e-3
+python -m src.detector.evaluate --set detector.out_dir=models/detector_lr2e-3
+# register the best run (chosen by validation mAP@0.5:0.95) as firewatch-detector, stage Staging:
+python -m src.tracking.register
+# baseline vs detector table and plot (reports/comparison.md, reports/comparison.png):
+dvc repro -s compare
+```
+
+`train_detector` fine-tunes `yolov8n.pt` on `data/processed/data.yaml` (D-Fire train/val plus the Simuletic train/val variants). Hyperparameters live in `params.yaml` under `detector:`; `detector.fraction` trains on a share of the train split for quick runs. `evaluate_detector` writes `reports/detector_metrics.json` with, for D-Fire test and Simuletic test:
+
+- box metrics from Ultralytics validation: precision, recall, F1, mAP@0.5, mAP@0.5:0.95 (overall and per class);
+- image-level metrics: each image is labelled fire / smoke / normal from its predicted boxes (confidence >= `detector.conf`) with the same rule as the baseline labels, so P / R / F1 are directly comparable with the baseline;
+- inference time per image, batch size 1, on CPU.
+
+Ultralytics' own MLflow callback is switched off. Runs are logged to the `firewatch-detector` experiment through `src/tracking/mlflow_utils.py` (per-epoch losses and validation mAP, final test metrics, plots and weights). Every helper is a no-op when `MLFLOW_TRACKING_URI` is not set.
+
+**GPU run on Colab:** `notebooks/train_detector_colab.ipynb` clones the repo, downloads the data from Kaggle, runs the data and detector stages with `dvc repro evaluate_detector`, trains the second configuration, runs `compare`, registers the detector and pushes `models/detector` to the DagsHub DVC remote. It needs Colab secrets `KAGGLE_USERNAME`, `KAGGLE_KEY`, `DAGSHUB_USER` and `DAGSHUB_TOKEN`.
 
 ## Data validation
 
@@ -112,10 +135,10 @@ One Simuletic image (`fire_detected_var16_img3`) has no label file; it is exclud
 |---|---|---|---|---|---|---|
 | Baseline (MobileNetV3-small) | D-Fire test | 0.775 | 0.798 | 0.772 | n/a | ~25 |
 | Baseline (MobileNetV3-small) | Simuletic test | 0.831 | 0.817 | 0.824 | n/a | ~26 |
-| Detector (YOLO nano) | D-Fire test | | | | | |
-| Detector (YOLO nano) | Simuletic test | | | | | |
+| Detector (YOLO nano) | D-Fire test | 0.922 | 0.902 | 0.911 | 0.733 | ~74 |
+| Detector (YOLO nano) | Simuletic test | 1.000 | 0.967 | 0.983 | 0.846 | ~162 |
 
-Baseline rows are the registered run `baseline-v1` (macro averages; Simuletic macro covers fire and smoke only because it has no `normal` images). Detector rows are filled in from `reports/detector_metrics.json`.
+Baseline rows are the registered run `baseline-v1` (macro averages; Simuletic macro covers fire and smoke only because it has no `normal` images). Detector rows are the registered run `detector-lr2e-3` (`firewatch-detector`, stage Staging; chosen by validation mAP@0.5:0.95, 0.423 vs 0.405 for `detector-v1`). P / R / F1 are image-level (same labels and macro rule as the baseline), mAP@0.5 is box-level. Box-level P / R on D-Fire test: 0.720 / 0.674, mAP@0.5:0.95 0.413. `reports/comparison.md` is the output of the `compare` stage for the pipeline default `detector-v1` (lr0 0.01; D-Fire image F1 0.882, mAP@0.5 0.703). Inference is ms per image on CPU, batch size 1, but the baseline was timed on a laptop and the detector on a Colab CPU, so the speeds are not directly comparable.
 
 ## Known limits
 
@@ -123,6 +146,9 @@ Baseline rows are the registered run `baseline-v1` (macro averages; Simuletic ma
 - Fog vs smoke confusion and night scenes are known weak spots and are not addressed here.
 - The baseline was trained on a 10% subset for 2 epochs on CPU to fit the time available; the settings are recorded in `params.yaml` and in each MLflow run. The two baseline configurations are within noise of each other.
 - FIRESENSE was dropped (no bounding boxes).
+- The detector was trained for 15 epochs on a Colab T4 GPU (full D-Fire train split); it has not been tuned further. Smoke is its weakest class: on D-Fire test 199 of 1,186 smoke images are predicted as normal.
+- `dvc.lock` comes from the Linux (Colab) run. `.gitattributes` forces LF line endings so the hashes match on Windows too; outputs written by a pipeline run on Windows can still hash differently, so use Linux or Colab for `dvc repro`.
+- `train_baseline` and `evaluate_baseline` were run directly, not through `dvc repro`, so they are not in `dvc.lock` yet and `dvc status` lists them.
 
 ## Git workflow
 
