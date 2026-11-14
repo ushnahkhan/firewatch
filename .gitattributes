@@ -1,0 +1,5 @@
+# LF everywhere: DVC hashes file bytes, so CRLF (Windows) vs LF (Linux) would change dvc.lock
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.ipynb text eol=lf
