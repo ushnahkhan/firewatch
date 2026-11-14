@@ -26,3 +26,22 @@ baseline:
   eval_sets:
     - {name: dfire_test, root: data/processed/dfire, split: test}
     - {name: simuletic_test, root: data/processed/simuletic, split: test}
+detector:
+  model: yolov8n.pt        # pretrained YOLOv8 nano (COCO), fine-tuned for smoke + fire boxes
+  data: data/processed/data.yaml
+  imgsz: 640
+  epochs: 15
+  batch: 32
+  lr0: 0.01
+  optimizer: SGD
+  patience: 50
+  fraction: 1.0            # share of the train split to use (develop on e.g. 0.1)
+  seed: 42
+  workers: 2
+  device: null             # null = GPU if available, else CPU
+  conf: 0.25               # min box confidence for the image-level fire/smoke/normal label
+  run_name: detector-v1
+  out_dir: models/detector
+  eval_sets:
+    - {name: dfire_test, data: data/processed/data.yaml, root: data/processed/dfire, split: test}
+    - {name: simuletic_test, data: data/processed/simuletic/data.yaml, root: data/processed/simuletic, split: test}
